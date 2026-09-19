@@ -1,0 +1,40 @@
+# Contexto de construccion minimo: solo pyproject.toml, README.md y
+# src/clinical_bigdata_pipeline/. Sin esto, Docker tendria que recorrer los
+# ~776 MB del repo en cada build de cada imagen.
+#
+# OJO: .dockerignore NO usa las reglas de .gitignore. Los patrones se comparan
+# contra la ruta relativa a la raiz del contexto, asi que `__pycache__` solo
+# excluiria el del primer nivel. Para que aplique a cualquier profundidad hay
+# que escribir `**/__pycache__`.
+
+.git
+.gitignore
+.venv
+.claude
+uv.lock
+
+# Artefactos de Python, a cualquier profundidad
+**/__pycache__
+**/*.py[cod]
+**/*.egg-info
+**/.ruff_cache
+**/.pytest_cache
+build/
+dist/
+wheels/
+
+# Los datos entran por bind mount, nunca horneados en la imagen
+data/
+outputs/
+
+# Los notebooks se montan si hace falta, no se copian
+notebooks/
+**/.ipynb_checkpoints
+
+# Configuracion local: el UID/GID llega por build args, no por archivo
+.env
+.env.example
+
+# Material de la asignatura y notas: irrelevantes para el build
+**/*.pdf
+CLAUDE.local.md
