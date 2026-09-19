@@ -1,27 +1,44 @@
 [project]
 name = "clinical-bigdata-pipeline"
 version = "0.1.0"
-description = "Add your description here"
+description = "Pipeline de Big Data sobre indicadores de salud del BRFSS: ingesta y EDA con Dask, algoritmo genetico y modelos con Spark"
 readme = "README.md"
 authors = [
     { name = "Juan José Lopera Londoño", email = "jjlopera.tech@gmail.com" }
 ]
-requires-python = ">=3.13"
+# 3.12 y no 3.13: si PySpark llegara a fallar en 3.13 dentro del contenedor,
+# basta bajar la imagen base sin tener que volver a resolver el lock.
+requires-python = ">=3.12"
 dependencies = [
-    "dask[distributed]>=2026.8.0",
+    "dask[dataframe,distributed]>=2026.8.0",
+    "kagglehub>=0.3.0",
     "matplotlib>=3.11.2",
     "numpy>=2.5.3",
     "pandas>=2.2,<3",
+    "psutil>=6.0.0",
+    "pyarrow>=18",
     "scikit-learn>=1.9.1",
     "ucimlrepo>=0.0.7",
 ]
 
+# pyspark NO se declara aca a proposito: vive solo en src/pyspark/requirements.txt.
+# Asi `uv sync` en el host no baja ~650 MB de JARs ni exige Java, y el trabajo
+# previo del algoritmo genetico (notebooks 01-03) sigue funcionando igual.
+
 [project.scripts]
-clinical-bigdata-pipeline = "clinical_bigdata_pipeline:main"
+# Un comando por contenedor: cada uno importa solo el motor que tiene instalado
+cbp-dask = "clinical_bigdata_pipeline.dask_stage:main"
+cbp-spark = "clinical_bigdata_pipeline.spark_stage:main"
 
 [build-system]
 requires = ["uv_build>=0.12.0,<0.13.0"]
 build-backend = "uv_build"
+
+# Explicito porque src/ contiene ademas src/dask/ y src/pyspark/, que son
+# contextos de construccion de imagenes y no paquetes de Python.
+[tool.uv.build-backend]
+module-root = "src"
+module-name = "clinical_bigdata_pipeline"
 
 [dependency-groups]
 dev = [

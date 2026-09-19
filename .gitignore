@@ -11,3 +11,20 @@ wheels/
 
 # Ruff
 .ruff_cache/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Datos: el CSV se descarga de Kaggle y el Parquet lo genera el pipeline.
+# Ninguno de los dos se versiona, pero la carpeta sí: si no existiera, Docker
+# la crearía como root al montarla y el contenedor no podría escribir adentro.
+data/*
+!data/.gitkeep
+
+# Configuración local de Docker: el UID/GID es propio de cada máquina.
+# La plantilla versionada es .env.example.
+.env
+
+# Material de la asignatura y notas locales
+Guia_Practica_BigData_Dask_Spark_Docker.pdf
+CLAUDE.local.md
