@@ -37,7 +37,7 @@ Ejecutar los notebooks en orden. El notebook `03_genetic_algorithm_dask.ipynb` l
         ▼
  ┌──────────────────────┐   Parquet particionado   ┌────────────────────────┐
  │  contenedor DASK     │ ───────────────────────► │  contenedor PYSPARK    │
- │  · ingesta (4 shards)│    volumen ./data        │  · agregación          │
+ │  · ingesta           │    volumen ./data        │  · agregación          │
  │  · limpieza          │                          │  · análisis sobre RDDs │
  │  · variables derivad.│                          │    (flatMap/reduceByKey)│
  │  · EDA + selección   │ ◄─────────────────────── │  · modelo MLlib        │
@@ -107,7 +107,7 @@ Todo cae en `outputs/heart_pipeline/`, en su propia subcarpeta para no mezclarse
 | `pipeline_variables.png` | Selección de variables en Dask y prevalencia por factor en Spark |
 | `pipeline_comparacion_motores.png` | Dask vs. Spark: tiempo y memoria |
 | `tabla_comparativa.csv` | La misma operación en los dos motores, con tiempos y memoria |
-| `metricas_modelo.csv` | AUC-PR y AUC-ROC del modelo, con su línea base |
+| `metricas_modelos.csv` | Accuracy, Precision, Recall, F1 y AUC-PR de los cinco modelos |
 | `seleccion_variables.csv` | Correlación de cada variable y cuáles quedaron seleccionadas |
 
 ---

@@ -1,0 +1,52 @@
+name: clinical-bigdata
+
+services:
+
+  # ------------------------------------------------- ETAPAS 1-2: Dask
+  dask:
+    build:
+      context: .
+      dockerfile: src/dask/Dockerfile
+      args:
+        UID: ${UID:-1000}
+        GID: ${GID:-1000}
+    image: cbp-dask:local
+    container_name: cbp-dask
+    command: ["cbp-dask"]
+    volumes:
+      # Misma ruta en los dos contenedores: es como se pasan el Parquet.
+      - ./data:/app/data
+      - ./outputs:/app/outputs
+    ports:
+      - "8787:8787"        # dashboard de Dask
+    mem_limit: ${CBP_DASK_MEM:-2g}
+    restart: "no"
+
+  # ------------------------------------------------- ETAPAS 3-6: Spark
+  pyspark:
+    build:
+      context: .
+      dockerfile: src/pyspark/Dockerfile
+      args:
+        UID: ${UID:-1000}
+        GID: ${GID:-1000}
+    image: cbp-pyspark:local
+    container_name: cbp-pyspark
+    command: ["cbp-spark"]
+    environment:
+      CBP_DATA_DIR: /app/data
+      CBP_OUTPUT_DIR: /app/outputs
+      CBP_MODELS_DIR: /app/models
+    depends_on:
+      dask:
+        # Spark espera a que Dask TERMINE, no solo a que arranque. Sin esto
+        # leeria un Parquet a medio escribir.
+        condition: service_completed_successfully
+    volumes:
+      - ./data:/app/data
+      - ./outputs:/app/outputs
+      - ./models:/app/models
+    ports:
+      - "4040:4040"        # Spark UI, visible mientras corre el contenedor
+    mem_limit: ${CBP_SPARK_MEM:-3g}
+    restart: "no"

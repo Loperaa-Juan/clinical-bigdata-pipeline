@@ -21,6 +21,11 @@ wheels/
 data/*
 !data/.gitkeep
 
+# Modelos entrenados: los genera el pipeline. La carpeta si se versiona, por
+# la misma razon que data/.
+models/*
+!models/.gitkeep
+
 # Configuración local de Docker: el UID/GID es propio de cada máquina.
 # La plantilla versionada es .env.example.
 .env
