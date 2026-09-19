@@ -1,14 +1,3 @@
-# ---------------------------------------------------------------------------
-# Contenedor de DASK — etapas 1 y 2 del pipeline.
-#
-# Ingesta el CSV, lo particiona, lo limpia, crea las variables derivadas, corre
-# el EDA y escribe el Parquet que despues consume el contenedor de PySpark.
-#
-# Es la imagen liviana de las dos: NO instala Java, porque Dask es Python puro.
-# El contexto de construccion es la raiz del repo (ver docker-compose.yml), no
-# esta carpeta, para poder copiar src/clinical_bigdata_pipeline/.
-# trixie porque ya tiene precompilado numpy, pandas y pyarrow
-# ---------------------------------------------------------------------------
 FROM python:3.13-slim-trixie 
 
 ARG UID=1000

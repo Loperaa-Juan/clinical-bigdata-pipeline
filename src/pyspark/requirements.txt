@@ -1,8 +1,3 @@
-# Contenedor de PYSPARK: agregaciones, analisis sobre RDDs y modelo MLlib.
-# No lleva dask ni scikit-learn: todo el computo lo hace Spark.
-#
-# pyspark 4.0.x es la primera linea que soporta Python 3.13 (SPARK-49870,
-# corregido en Spark 4.0.0). La 3.5.x topa en Python 3.11.
 pyspark[sql]>=4.0.4,<4.1
 pyarrow>=18
 pandas>=2.2,<3

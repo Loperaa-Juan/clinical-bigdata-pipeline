@@ -1,12 +1,3 @@
-# Contexto de construccion minimo: solo pyproject.toml, README.md y
-# src/clinical_bigdata_pipeline/. Sin esto, Docker tendria que recorrer los
-# ~776 MB del repo en cada build de cada imagen.
-#
-# OJO: .dockerignore NO usa las reglas de .gitignore. Los patrones se comparan
-# contra la ruta relativa a la raiz del contexto, asi que `__pycache__` solo
-# excluiria el del primer nivel. Para que aplique a cualquier profundidad hay
-# que escribir `**/__pycache__`.
-
 .git
 .gitignore
 .venv

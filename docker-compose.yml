@@ -50,3 +50,31 @@ services:
       - "4040:4040"        # Spark UI, visible mientras corre el contenedor
     mem_limit: ${CBP_SPARK_MEM:-3g}
     restart: "no"
+
+  # ------------------------------------------------- ETAPA 7: API de inferencia
+  api:
+    build:
+      context: .
+      dockerfile: src/api/Dockerfile
+      args:
+        UID: ${UID:-1000}
+        GID: ${GID:-1000}
+    image: cbp-api:local
+    container_name: cbp-api
+    environment:
+      CBP_OUTPUT_DIR: /app/outputs
+      CBP_MODELS_DIR: /app/models
+    depends_on:
+      pyspark:
+        # Igual que Spark con Dask: la API no arranca hasta que el
+        # entrenamiento TERMINO y dejo el modelo escrito en ./models.
+        condition: service_completed_successfully
+    volumes:
+      # Solo lectura: la API consume artefactos del pipeline, no los produce.
+      - ./models:/app/models:ro
+      - ./outputs:/app/outputs:ro
+    ports:
+      - "${CBP_API_PORT:-8000}:8000"
+    mem_limit: ${CBP_API_MEM:-2g}
+    # A diferencia de los otros dos, este no es un job: queda sirviendo.
+    restart: unless-stopped

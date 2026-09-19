@@ -1,9 +1,3 @@
-"""Etapa 6: las tres visualizaciones que pide la guia.
-
-Todas salen de DataFrames agregados de pocas filas. El assert es la evidencia
-literal de que no se convierten los datos masivos completos a pandas.
-"""
-
 from pathlib import Path
 
 import matplotlib

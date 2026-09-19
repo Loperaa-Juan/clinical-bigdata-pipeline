@@ -3,8 +3,8 @@ FROM python:3.13-slim-trixie
 ARG UID=1000
 ARG GID=1000
 
-# Spark 4 exige Java 17 o superior. procps aporta `ps`, que usan los scripts
-# bin/spark-class internos.
+# Las mismas dos dependencias del sistema que el contenedor de Spark: cargar un
+# modelo de MLlib levanta una JVM, aunque aca sea para predecir una fila.
 RUN apt-get update && apt-get install -y --no-install-recommends \
         openjdk-21-jre-headless \
         procps \
@@ -12,23 +12,18 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 ENV JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64 \
     PYTHONUNBUFFERED=1 \
-    CBP_DATA_DIR=/app/data \
     CBP_OUTPUT_DIR=/app/outputs \
-    # Mismo interprete en driver y ejecutores: PySpark aborta si las versiones
-    # minor de Python no coinciden.
+    CBP_MODELS_DIR=/app/models \
     PYSPARK_PYTHON=/usr/local/bin/python \
     PYSPARK_DRIVER_PYTHON=/usr/local/bin/python \
-    # Los defaults apuntan a $SPARK_HOME/{work,logs}, que queda dentro de
-    # site-packages y es de root: el usuario app no podria escribir ahi.
     SPARK_LOCAL_DIRS=/tmp/spark-local
 
 WORKDIR /app
 
-# uv en vez de pip: con los ~650 MB de pyspark la diferencia se nota
 COPY --from=ghcr.io/astral-sh/uv:0.12.16 /uv /usr/local/bin/uv
 
-# pyspark va en su propia capa para que no se reinstale al tocar el codigo
-COPY src/pyspark/requirements.txt /tmp/requirements.txt
+# Dependencias primero: esta capa se cachea y no se reinstala al tocar el codigo
+COPY src/api/requirements.txt /tmp/requirements.txt
 RUN uv pip install --system --no-cache -r /tmp/requirements.txt
 
 COPY pyproject.toml README.md ./
@@ -37,7 +32,11 @@ RUN uv pip install --system --no-cache --no-deps .
 
 RUN groupadd --gid "${GID}" app 2>/dev/null || true \
  && useradd --uid "${UID}" --gid "${GID}" --create-home app 2>/dev/null || true \
- && mkdir -p /app/data /app/outputs /app/models /tmp/spark-local \
+ && mkdir -p /app/outputs /app/models /tmp/spark-local \
  && chown -R "${UID}:${GID}" /app /tmp/spark-local
 
 USER ${UID}:${GID}
+
+EXPOSE 8000
+
+CMD ["uvicorn", "clinical_bigdata_pipeline.api:app", "--host", "0.0.0.0", "--port", "8000"]

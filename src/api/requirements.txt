@@ -1,0 +1,7 @@
+# Mismo pyspark que el contenedor de entrenamiento: el modelo se guarda en el
+# formato de MLlib y solo lo puede leer la misma libreria que lo escribio.
+pyspark[sql]>=4.0.4,<4.1
+fastapi>=0.120
+uvicorn[standard]>=0.38
+pandas>=2.2,<3
+numpy>=2.5.3

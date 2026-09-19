@@ -1,10 +1,3 @@
-"""Etapas 1, 2 y mitad Dask de la 5.
-
-Ingesta, limpieza, variables derivadas, EDA y seleccion de variables. Corre en
-el contenedor `dask` con el comando `cbp-dask` y deja un Parquet particionado
-que despues lee el contenedor `pyspark`.
-"""
-
 import os
 import shutil
 import time
@@ -16,7 +9,7 @@ import pandas as pd
 import psutil
 from dask.distributed import Client, LocalCluster
 
-# --- rutas -----------------------------------------------------------------
+# Rutas 
 # Contra este archivo y no contra el cwd: asi valen igual desde la terminal,
 # desde Jupyter y desde el contenedor.
 RAIZ = Path(__file__).resolve().parents[2]
@@ -27,13 +20,13 @@ RUTA_CSV = DIR_DATOS / "raw" / "heart_disease_health_indicators_BRFSS2015.csv"
 DIR_PARQUET = DIR_DATOS / "curated"
 RUTA_FILAS = DIR_DATOS / "filas_dask.txt"  # Spark lo lee para verificar el traspaso
 
-# --- parametros ------------------------------------------------------------
-N_WORKERS = 4  # explicito: os.cpu_count() ve los 16 del host, no el limite del contenedor
-BLOCKSIZE = "2MB"  # el default son 64 MiB y el CSV pesa 21,7: seria 1 sola particion
+# parametros 
+N_WORKERS = 4  
+BLOCKSIZE = "2MB"  
 TOP_VARIABLES = 10
 REPETICIONES_BENCHMARK = 5
 
-OBJETIVO = "HeartDiseaseorAttack"  # es la PRIMERA columna del CSV, no la ultima
+OBJETIVO = "HeartDiseaseorAttack"  
 
 DATASET_KAGGLE = "alexteboul/heart-disease-health-indicators-dataset"
 NOMBRE_CSV = "heart_disease_health_indicators_BRFSS2015.csv"

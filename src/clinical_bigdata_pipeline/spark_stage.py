@@ -1,10 +1,3 @@
-"""Etapas 3, 4, mitad Spark de la 5, y 6.
-
-Procesamiento distribuido, analisis sobre RDDs, modelos MLlib, comparacion
-entre motores y visualizaciones. Corre en el contenedor `pyspark` con el
-comando `cbp-spark`, sobre el Parquet que escribio Dask.
-"""
-
 import os
 import time
 from pathlib import Path
@@ -29,7 +22,7 @@ from pyspark.sql import functions as F
 
 from . import visualize
 
-# --- rutas -----------------------------------------------------------------
+# Rutas 
 # Repetidas aca a proposito: este contenedor no tiene Dask instalado y no puede
 # importar nada de dask_stage.
 RAIZ = Path(__file__).resolve().parents[2]
@@ -41,7 +34,7 @@ DIR_PARQUET = DIR_DATOS / "curated"
 DIR_RESULTADOS = DIR_DATOS / "resultados"
 RUTA_FILAS = DIR_DATOS / "filas_dask.txt"
 
-# --- parametros ------------------------------------------------------------
+# Parametros 
 SPARK_MASTER = "local[*]"
 REPETICIONES_BENCHMARK = 5
 
@@ -113,7 +106,6 @@ def prevalencia_por_variable(sdf: DataFrame, variables: list[str]) -> pd.DataFra
     }]
     columnas = binarias + [OBJETIVO]
 
-    # ---------- PLANEACION: transformaciones, no se ejecuta nada ----------
     rdd = (
         sdf.select(*columnas).rdd
         .flatMap(lambda fila: [
@@ -122,7 +114,6 @@ def prevalencia_por_variable(sdf: DataFrame, variables: list[str]) -> pd.DataFra
         .reduceByKey(lambda a, b: (a[0] + b[0], a[1] + b[1]))
     )
 
-    # ---------- EJECUCION: la accion dispara el trabajo ----------
     conteos = rdd.collect()
 
     filas = [

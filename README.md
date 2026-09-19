@@ -42,6 +42,13 @@ Ejecutar los notebooks en orden. El notebook `03_genetic_algorithm_dask.ipynb` l
  │  · variables derivad.│                          │    (flatMap/reduceByKey)│
  │  · EDA + selección   │ ◄─────────────────────── │  · modelo MLlib        │
  └──────────────────────┘    ./data/resultados     └────────────────────────┘
+                                                              │ modelo MLlib
+                                                              ▼ volumen ./models
+                                                  ┌────────────────────────┐
+                                                  │  contenedor API        │
+                                                  │  · FastAPI + uvicorn   │
+                                                  │  · POST /predict       │
+                                                  └────────────────────────┘
 ```
 
 Dask y Spark **no son dos ejercicios separados**: se pasan los datos por un volumen compartido en formato Parquet, y `docker compose` declara la dependencia con `service_completed_successfully`, de modo que Spark no arranca hasta que Dask terminó de escribir.
@@ -56,6 +63,7 @@ Dask y Spark **no son dos ejercicios separados**: se pasan los datos por un volu
 | Agregaciones distribuidas | **Spark** | Catalyst optimiza el plan lógico y aprovecha el particionado del Parquet |
 | Conteos sobre RDDs | **Spark** | La API de RDD hace explícita la separación entre transformaciones y acciones |
 | Modelo | **Spark MLlib** | Biblioteca de ML realmente distribuida |
+| API de inferencia | **FastAPI** | El modelo entrenado se consulta fila a fila: ahí no hay nada que distribuir |
 
 ### Requisitos
 
@@ -68,6 +76,9 @@ GID=1000
 
 CBP_DASK_MEM=2g
 CBP_SPARK_MEM=3g
+CBP_API_MEM=2g
+
+CBP_API_PORT=8000
 
 ### Ejecución
 
@@ -82,7 +93,7 @@ uv run python -c "from clinical_bigdata_pipeline import dask_stage; \
 # 1. Construir las dos imágenes
 docker compose build
 
-# 2. Ejecutar el pipeline completo: primero Dask, después Spark
+# 2. Ejecutar el pipeline completo: Dask, después Spark, después la API
 docker compose up
 ```
 
@@ -90,6 +101,30 @@ Mientras corre:
 
 - **Dashboard de Dask** — http://localhost:8787
 - **Spark UI** — http://localhost:4040 (visible mientras Spark trabaja)
+- **API** — http://localhost:8000/docs (queda levantada cuando el pipeline termina)
+
+### La API
+
+El último servicio del `compose` no es una etapa más del pipeline: es un servidor que queda escuchando. Arranca con `service_completed_successfully` sobre `pyspark`, de modo que solo se levanta cuando el entrenamiento terminó y dejó el mejor modelo escrito en `./models`. Al arrancar lo carga una sola vez —abrir una `SparkSession` cuesta varios segundos y no puede pagarse en cada petición— y monta `./models` y `./outputs` en **solo lectura**: la API consume artefactos del pipeline, no los produce.
+
+| Endpoint | Qué hace |
+|---|---|
+| `GET /` | Qué modelo quedó cargado y qué variables espera recibir |
+| `POST /predict` | Clasifica un encuestado: `1` = infarto o enfermedad coronaria |
+| `GET /docs` | Swagger UI, con el cuerpo de ejemplo ya lleno |
+
+```bash
+curl -X POST http://localhost:8000/predict \
+  -H 'Content-Type: application/json' \
+  -d '{"features": {"GenHlth": 3, "Age": 9, "DiffWalk": 0, "HighBP": 1, "Stroke": 0,
+                    "PhysHlth": 5, "HighChol": 1, "Diabetes": 0, "Income": 6, "Smoker": 1}}'
+```
+
+```json
+{"modelo": "NaiveBayes", "prediccion": 0, "riesgo": false, "probabilidad": 0.3522}
+```
+
+Cuál de los cinco modelos quedó guardado cambia entre corridas (es el mejor por accuracy), así que la API no fija el nombre: lo resuelve leyendo la metadata que escribe MLlib. Las variables y **su orden** los lee de `seleccion_variables.csv`, porque el vector de features del modelo solo conoce posiciones.
 
 ### Parámetros
 
@@ -128,15 +163,20 @@ clinical-bigdata-pipeline/
 │   ├── pyspark/
 │   │   ├── Dockerfile                          # Imagen del contenedor de Spark (con JRE 21)
 │   │   └── requirements.txt
-│   └── clinical_bigdata_pipeline/              # Paquete compartido por ambos contenedores
+│   ├── api/
+│   │   ├── Dockerfile                          # Imagen de la API (FastAPI + JRE 21 para MLlib)
+│   │   └── requirements.txt
+│   └── clinical_bigdata_pipeline/              # Paquete compartido por los tres contenedores
 │       ├── dask_stage.py                       # Etapas 1-2 y mitad Dask de la 5 · comando cbp-dask
 │       ├── spark_stage.py                      # Etapas 3-4 y mitad Spark de la 5 · comando cbp-spark
-│       └── visualize.py                        # Etapa 6: las tres figuras
+│       ├── visualize.py                        # Etapa 6: las tres figuras
+│       └── api.py                              # Etapa 7: la API que sirve el modelo entrenado
 ├── outputs/
 │   ├── ga_secuencial_vs_dask.png               # Trabajo 1
 │   ├── tiempo_secuencial.csv                   # Trabajo 1
 │   └── heart_pipeline/                         # Trabajo 2
 ├── data/                                       # No versionado: dataset y Parquet generados
+├── models/                                     # El mejor modelo de la etapa 4, que sirve la API
 ├── docker-compose.yml
 ├── .dockerignore
 ├── .env                                        # Parámetros de ejecución
